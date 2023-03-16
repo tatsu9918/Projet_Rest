@@ -1,41 +1,32 @@
-CREATE TABLE Article(
-   Id_article INT AUTO_INCREMENT,
-   date_publication DATETIME,
-   contenu TEXT,
-   Auteur VARCHAR(50),
-   PRIMARY KEY(Id_article)
+CREATE TABLE Rôle(
+   Id_Rôle INT AUTO_INCREMENT,
+   Libellé TEXT,
+   PRIMARY KEY(Id_Rôle)
 );
 
 CREATE TABLE Utilisateur(
-   id_user INT AUTO_INCREMENT,
-   Nom VARCHAR(50),
-   mot_de_passe VARCHAR(50),
-   PRIMARY KEY(id_user)
+   Id_Utilisateur INT AUTO_INCREMENT,
+   nom VARCHAR(50),
+   mdp VARCHAR(50),
+   Id_Rôle INT NOT NULL,
+   PRIMARY KEY(Id_Utilisateur),
+   FOREIGN KEY(Id_Rôle) REFERENCES Rôle(Id_Rôle)
 );
 
-CREATE TABLE Rôle(
-   Id_rôle INT AUTO_INCREMENT,
-   Intitulé VARCHAR(50),
-   id_user INT NOT NULL,
-   PRIMARY KEY(Id_rôle),
-   FOREIGN KEY(id_user) REFERENCES Utilisateur(id_user)
+CREATE TABLE Articles(
+   Id_Articles INT AUTO_INCREMENT,
+   titre VARCHAR(50),
+   Contenu TEXT,
+   date_publi DATE,
+   Id_Utilisateur INT NOT NULL,
+   PRIMARY KEY(Id_Articles),
+   FOREIGN KEY(Id_Utilisateur) REFERENCES Utilisateur(Id_Utilisateur)
 );
 
-CREATE TABLE Like_dislike(
-   id_like_dislike INT AUTO_INCREMENT,
-   Liker BOOLEAN,
-   Disliker BOOLEAN,
-   id_user INT,
-   Id_article INT NOT NULL,
-   PRIMARY KEY(id_like_dislike),
-   FOREIGN KEY(id_user) REFERENCES Utilisateur(id_user),
-   FOREIGN KEY(Id_article) REFERENCES Article(Id_article)
-);
-
-CREATE TABLE Intéragir(
-   Id_article INT,
-   id_user INT,
-   PRIMARY KEY(Id_article, id_user),
-   FOREIGN KEY(Id_article) REFERENCES Article(Id_article),
-   FOREIGN KEY(id_user) REFERENCES Utilisateur(id_user)
+CREATE TABLE Like_DislikeArticles(
+   Id_Like_DislikeArticles INT AUTO_INCREMENT,
+   type BOOLEAN,
+   Id_Articles INT NOT NULL,
+   PRIMARY KEY(Id_Like_DislikeArticles),
+   FOREIGN KEY(Id_Articles) REFERENCES Articles(Id_Articles)
 );
