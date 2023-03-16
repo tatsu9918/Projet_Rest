@@ -1,16 +1,16 @@
-CREATE TABLE Rôle(
-   Id_Rôle INT AUTO_INCREMENT,
+CREATE TABLE Role(
+   Id_Role INT AUTO_INCREMENT,
    Libellé TEXT,
-   PRIMARY KEY(Id_Rôle)
+   PRIMARY KEY(Id_Role)
 );
 
 CREATE TABLE Utilisateur(
    Id_Utilisateur INT AUTO_INCREMENT,
    nom VARCHAR(50),
    mdp VARCHAR(50),
-   Id_Rôle INT NOT NULL,
+   Id_Role INT NOT NULL,
    PRIMARY KEY(Id_Utilisateur),
-   FOREIGN KEY(Id_Rôle) REFERENCES Rôle(Id_Rôle)
+   FOREIGN KEY(Id_Role) REFERENCES Role(Id_Role)
 );
 
 CREATE TABLE Articles(
@@ -26,7 +26,9 @@ CREATE TABLE Articles(
 CREATE TABLE Like_DislikeArticles(
    Id_Like_DislikeArticles INT AUTO_INCREMENT,
    type BOOLEAN,
+   Id_Utilisateur INT NOT NULL,
    Id_Articles INT NOT NULL,
    PRIMARY KEY(Id_Like_DislikeArticles),
+   FOREIGN KEY(Id_Utilisateur) REFERENCES Utilisateur(Id_Utilisateur),
    FOREIGN KEY(Id_Articles) REFERENCES Articles(Id_Articles)
 );
