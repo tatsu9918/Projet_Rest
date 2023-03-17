@@ -55,7 +55,7 @@ catch (Exception $e) {
             deliver_response(200, "Succes. Voici les phrases de Chuck Norris !", $matchingData);
         }
         else {*/
-        $req = $linkpdo->prepare('SELECT * FROM article;');
+        $req = $linkpdo->prepare('SELECT * FROM articles;');
 
         if ($req == false) {
              die ('Error preparation');
@@ -71,7 +71,7 @@ catch (Exception $e) {
         $matchingData  = $req->fetchAll();
 
         /// Envoi de la réponse au Client
-        deliver_response(200, "Succes. Voici les article", $matchingData);
+        deliver_response(200, "Succes. Voici les articles", $matchingData);
         //}
     break;
 
@@ -88,7 +88,7 @@ catch (Exception $e) {
 
         //echo $postedData['phrase'];
 
-        $req = $linkpdo->prepare('INSERT INTO article (date_publication, contenu, Auteur) VALUES (:date_publication, :contenu, :Auteur)');
+        $req = $linkpdo->prepare('INSERT INTO articles (date_publication, contenu, Auteur) VALUES (:date_publication, :contenu, :Auteur)');
 
         if ($req == false) {
             die ('Error preparation');
@@ -118,14 +118,14 @@ catch (Exception $e) {
 
         var_dump($postedData);
 
-        $req = $linkpdo->prepare('UPDATE Article SET contenu=:contenu, date_publication = CURRENT_TIMESTAMP, Auteur = :Auteur WHERE Id_article=:Id_article');
+        $req = $linkpdo->prepare('UPDATE articles SET contenu=:contenu, date_publication = CURRENT_TIMESTAMP, Auteur = :Auteur WHERE Id_articles=:Id_articles');
 
         if ($req == false) {
             die ('Error preparation');
         }
 
         $req2 = $req->execute(array("contenu" => $postedData['contenu'],
-                                    "Id_article" => $_GET['Id_article'],
+                                    "Id_articles" => $_GET['Id_articles'],
                                     "Auteur" => $postedData['Auteur']));
 
         if ($req2 == false) {
@@ -140,25 +140,69 @@ catch (Exception $e) {
 
     /// Cas de la méthode DELETE
     case "DELETE" :
-        /// Récupération de l'identifiant de la ressource envoyé par le Client
-        if (!empty($_GET['Id_article'])){
-            /// Traitement
-            $req = $linkpdo->prepare('DELETE FROM Article WHERE Id_article=:Id_article;');
+        /// Si la récupération du login et du mot de passe n'est pas vide
+        if(!empty($_GET['login']) && !empty($_GET['password']))
+        {
+            $req = $linkpdo->prepare('SELECT Libellé FROM role
+            INNER JOIN utilisateur
+            ON role.Id_Role = utilisateur.Id_Role
+            WHERE utilisateur.nom = :nom AND utilisateur.mdp = :mdp;');
 
             if ($req == false) {
                 die ('Error preparation');
             }
 
-            $req2 = $req->execute(array("Id_article" => $_GET['Id_article']));
+            $req2 = $req->execute(array(
+                "nom" => $_GET['login'],
+                "mdp" => $_GET['password']
+            ));
 
             if ($req2 == false) {
                 $req->DebugDumpParams();
                 die ('Error execute');
             }
-        }
 
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
+            $matchingData  = $req->fetchAll();
+
+            print_r($matchingData[0][0]);
+
+            if(count($matchingData) == 0){
+                /// Envoi de la réponse au Client
+                deliver_response(401, "Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
+            }
+            else{
+                if (!empty($_GET['Id_articles'])){
+                    /// Traitement
+                    if($matchingData[0][0] != 'Moderator'){
+                        /// Envoi de la réponse au Client
+                        deliver_response(401, "Et non, rien du tout !", NULL);
+                    }
+                    else {
+                        $req = $linkpdo->prepare('DELETE FROM articles WHERE Id_articles=:Id_articles;');
+        
+                        if ($req == false) {
+                            die ('Error preparation');
+                        }
+            
+                        $req2 = $req->execute(array("Id_articles" => $_GET['Id_articles']));
+            
+                        if ($req2 == false) {
+                            $req->DebugDumpParams();
+                            die ('Error execute');
+                        }
+
+                        /// Envoi de la réponse au Client
+                        deliver_response(200, "articles supprimé !", NULL);
+                    }
+
+                    
+                }
+            }
+        }
+        else{
+            /// Sinon refus
+            deliver_response(401, "Vous n'êtes pas Authentifé. Opération refusée !", NULL);
+        }
     break;
 
     case "PATCH":
