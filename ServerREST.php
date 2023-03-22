@@ -164,20 +164,16 @@ catch (Exception $e) {
 
             $matchingData  = $req->fetchAll();
 
-            print_r($matchingData[0][0]);
+            //print_r($matchingData[0][0]);
 
             if(count($matchingData) == 0){
                 /// Envoi de la réponse au Client
-                deliver_response(401, "Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
+                deliver_response(401, "401 Opération refusée : Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
             }
             else{
                 if (!empty($_GET['Id_articles'])){
                     /// Traitement
-                    if($matchingData[0][0] != 'Moderator'){
-                        /// Envoi de la réponse au Client
-                        deliver_response(401, "Et non, rien du tout !", NULL);
-                    }
-                    else {
+                    if($matchingData[0][0] == 'Moderator'){
                         $req = $linkpdo->prepare('DELETE FROM articles WHERE Id_articles=:Id_articles;');
         
                         if ($req == false) {
@@ -193,6 +189,52 @@ catch (Exception $e) {
 
                         /// Envoi de la réponse au Client
                         deliver_response(200, "articles supprimé !", NULL);
+                    }
+                    elseif ($matchingData[0][0] == 'Publisher') {
+                        $req = $linkpdo->prepare('SELECT * FROM `articles`
+                        INNER JOIN utilisateur
+                        ON utilisateur.Id_Utilisateur = articles.Id_Utilisateur
+                        WHERE Id_Articles = :Id_articles AND utilisateur.nom = :leLogin;');
+        
+                        if ($req == false) {
+                            die ('Error preparation');
+                        }
+            
+                        $req2 = $req->execute(array("Id_articles" => $_GET['Id_articles'],
+                            "leLogin" => $_GET['login']));
+            
+                        if ($req2 == false) {
+                            $req->DebugDumpParams();
+                            die ('Error execute');
+                        }
+
+                        $matchingData  = $req->fetchAll();
+
+                        if(count($matchingData) == 0){
+                            /// Envoi de la réponse au Client
+                            deliver_response(401, "Votre compte n'est pas enregistré en tant que moderator dans notre base. Impossible d'effectuer l'opération", NULL);
+                        }
+                        else{
+                            $req = $linkpdo->prepare('DELETE FROM articles WHERE Id_articles=:Id_articles;');
+            
+                            if ($req == false) {
+                                die ('Error preparation');
+                            }
+                
+                            $req2 = $req->execute(array("Id_articles" => $_GET['Id_articles']));
+                
+                            if ($req2 == false) {
+                                $req->DebugDumpParams();
+                                die ('Error execute');
+                            }
+
+                            /// Envoi de la réponse au Client
+                            deliver_response(200, "articles supprimé !", NULL);
+                        }
+                    }
+                    else {
+                        /// Envoi de la réponse au Client
+                        deliver_response(401, "Utilisateur non authentifié, opération refusée", NULL);
                     }
 
                     
