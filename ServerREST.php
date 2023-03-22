@@ -1,8 +1,4 @@
 <?php
-///http://www.kilya.biz/api/chuckn_facts.php
-/// Librairies éventuelles (pour la connexion à la BDD, etc.)
- //include('mylib.php');
- 
  /// Paramétrage de l'entête HTTP (pour la réponse au Client)
  header("Content-Type:application/json");
  
@@ -21,41 +17,7 @@ catch (Exception $e) {
  switch ($http_method){
     /// Cas de la méthode GET
     case "GET" :
-        /// Récupération des critères de recherche envoyés par le Client
-        /*if (!empty($_GET['phrase_a_afficher'])){
-        /// Traitement
-
-            if(!empty($_GET['voteSet'])){
-                $req = $linkpdo->prepare('SELECT * FROM chuckn_facts 
-                ORDER BY vote DESC 
-                LIMIT :nb;');
-            }
-            else{
-                $req = $linkpdo->prepare('SELECT * FROM chuckn_facts 
-                ORDER BY date_ajout DESC 
-                LIMIT :nb;');
-            }
-
-            if ($req == false) {
-                die ('Error preparation');
-            }
-
-            $req->bindValue(':nb', (int) $_GET['phrase_a_afficher'], PDO::PARAM_INT);
-
-            $req2 = $req->execute();
-
-            if ($req2 == false) {
-                $req->DebugDumpParams();
-                die ('Error execute');
-            }
-
-            $matchingData  = $req->fetchAll();
-
-            /// Envoi de la réponse au Client
-            deliver_response(200, "Succes. Voici les phrases de Chuck Norris !", $matchingData);
-        }
-        else {*/
-        $req = $linkpdo->prepare('SELECT * FROM articles;');
+        $req = $linkpdo->prepare('SELECT titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
 
         if ($req == false) {
              die ('Error preparation');
@@ -88,16 +50,16 @@ catch (Exception $e) {
 
         //echo $postedData['phrase'];
 
-        $req = $linkpdo->prepare('INSERT INTO articles (date_publication, contenu, Auteur) VALUES (:date_publication, :contenu, :Auteur)');
+        $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
 
         if ($req == false) {
             die ('Error preparation');
         }
 
         $req2 = $req->execute(array(
-            "date_publication" => $postedData['date_publication'],
-            "contenu" => $postedData['contenu'],
-            "Auteur" => $postedData['Auteur']
+            "contenu" => $postedData['Contenu'],
+            "titre" => $postedData['titre'],
+            "id" => $postedData['Id_Utilisateur']
         ));
 
         if ($req2 == false) {
