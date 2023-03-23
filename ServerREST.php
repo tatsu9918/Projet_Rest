@@ -39,36 +39,92 @@ catch (Exception $e) {
 
     /// Cas de la méthode POST
     case "POST" :
-        /// Récupération des données envoyées par le Client
-        $postedData = file_get_contents('php://input');
+        if(!empty($_GET['login']) && !empty($_GET['password']))
+        {
+            $req = $linkpdo->prepare('SELECT Libellé FROM role
+            INNER JOIN utilisateur
+            ON role.Id_Role = utilisateur.Id_Role
+            WHERE utilisateur.nom = :nom AND utilisateur.mdp = :mdp;');
+
+            if ($req == false) {
+                die ('Error preparation');
+            }
+
+            $req2 = $req->execute(array(
+                "nom" => $_GET['login'],
+                "mdp" => $_GET['password']
+            ));
+
+            if ($req2 == false) {
+                $req->DebugDumpParams();
+                die ('Error execute');
+            }
+
+            $matchingData  = $req->fetchAll();
+
+            //print_r($matchingData[0][0]);
+
+            if(count($matchingData) == 0){
+                /// Envoi de la réponse au Client
+                deliver_response(401, "401 Opération refusée : Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
+            }
+            elseif($matchingData[0][0] == 'Moderator'){
+                /// Envoi de la réponse au Client
+                deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
+            }
+            else{
+                /// Récupération des données envoyées par le Client
+                $postedData = file_get_contents('php://input');
+                
+                /// Traitement
+
+                $postedData = json_decode($postedData, true);
+
+                var_dump($postedData);
+
+                //echo $postedData['phrase'];
+
+                $req = $linkpdo->prepare('SELECT Id_Utilisateur FROM utilisateur WHERE nom=:monLogin');
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute(array(
+                    "monLogin" => $_GET['login']
+                ));
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                $matchingData  = $req->fetchAll();
+
+                print_r("L'id recherché : ", $matchingData[0][0]);
+
+                $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute(array(
+                    "contenu" => $postedData['Contenu'],
+                    "titre" => $postedData['titre'],
+                    "id" => $matchingData[0][0]
+                ));
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                /// Envoi de la réponse au Client
+                deliver_response(201, "Insertion réussie !", NULL);
+            }
+        }
         
-        /// Traitement
-
-        $postedData = json_decode($postedData, true);
-
-        var_dump($postedData);
-
-        //echo $postedData['phrase'];
-
-        $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
-
-        if ($req == false) {
-            die ('Error preparation');
-        }
-
-        $req2 = $req->execute(array(
-            "contenu" => $postedData['Contenu'],
-            "titre" => $postedData['titre'],
-            "id" => $postedData['Id_Utilisateur']
-        ));
-
-        if ($req2 == false) {
-            $req->DebugDumpParams();
-            die ('Error execute');
-        }
-
-        /// Envoi de la réponse au Client
-        deliver_response(201, "Insertion réussie !", NULL);
     break;
 
     /// Cas de la méthode PUT
