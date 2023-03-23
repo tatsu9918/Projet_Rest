@@ -17,7 +17,7 @@ catch (Exception $e) {
  switch ($http_method){
     /// Cas de la méthode GET
     case "GET" :
-        $req = $linkpdo->prepare('SELECT titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
+        $req = $linkpdo->prepare('SELECT Id_Articles, titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
 
         if ($req == false) {
              die ('Error preparation');
@@ -39,6 +39,83 @@ catch (Exception $e) {
 
     /// Cas de la méthode POST
     case "POST" :
+        //Vérifie si l'utilisateur à bien rentré ses logins et mot de passes dans l'URL
+        if(!empty($_GET['login']) && !empty($_GET['password']))
+        {
+            $req = $linkpdo->prepare('SELECT Libellé FROM role
+            INNER JOIN utilisateur
+            ON role.Id_Role = utilisateur.Id_Role
+            WHERE utilisateur.nom = :nom AND utilisateur.mdp = :mdp;');
+
+            if ($req == false) {
+                die ('Error preparation');
+            }
+
+            $req2 = $req->execute(array(
+                "nom" => $_GET['login'],
+                "mdp" => $_GET['password']
+            ));
+
+            if ($req2 == false) {
+                $req->DebugDumpParams();
+                die ('Error execute');
+            }
+
+            $matchingData  = $req->fetchAll();
+
+            //print_r($matchingData[0][0]);
+
+            //Si l'utilisateur n'est pas enregistré
+            if(count($matchingData) == 0){
+                /// Envoi de la réponse au Client
+                deliver_response(401, "401 Opération refusée : Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
+            }
+            //Si l'utilisateur n'est pas Publisher
+            elseif($matchingData[0][0] == 'Moderator'){
+                /// Envoi de la réponse au Client
+                deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
+            }
+            else{
+                /// Récupération des données envoyées par le Client
+                $postedData = file_get_contents('php://input');
+                
+                /// Traitement
+
+                $postedData = json_decode($postedData, true);
+
+                var_dump($postedData);
+
+                $matchingData  = idEnLogin($_GET['login']);
+
+                //Seulement un test
+                //print_r("L'id recherché : ", $matchingData[0][0]);
+
+                $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute(array(
+                    "contenu" => $postedData['Contenu'],
+                    "titre" => $postedData['titre'],
+                    "id" => $matchingData[0][0]
+                ));
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                /// Envoi de la réponse au Client
+                deliver_response(201, "Insertion réussie !", NULL);
+            }
+        }
+        
+    break;
+
+    /// Cas de la méthode PUT
+    case "PUT" :
         if(!empty($_GET['login']) && !empty($_GET['password']))
         {
             $req = $linkpdo->prepare('SELECT Libellé FROM role
@@ -68,92 +145,82 @@ catch (Exception $e) {
                 /// Envoi de la réponse au Client
                 deliver_response(401, "401 Opération refusée : Votre compte n'est pas enregistré dans notre base. Vous continurez en tant que non Authentifé", NULL);
             }
-            elseif($matchingData[0][0] == 'Moderator'){
-                /// Envoi de la réponse au Client
-                deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
-            }
             else{
-                /// Récupération des données envoyées par le Client
-                $postedData = file_get_contents('php://input');
-                
-                /// Traitement
+                if (!empty($_GET['Id_articles'])){
+                    /// Traitement : Si Moderator, l'utilisateur ne peut pas modifier n'importe quel article
+                    if($matchingData[0][0] == 'Moderator'){
+                         /// Envoi de la réponse au Client
+                         deliver_response(401, "Votre compte est enregistré en tant que moderator dans notre base. Impossible d'effectuer l'opération", NULL);
+                    }
+                    /// Traitement : Sinon, l'utilisateur peut modifier l'article si il lui appartient seulement
+                    elseif ($matchingData[0][0] == 'Publisher') {
+                        $req = $linkpdo->prepare('SELECT * FROM `articles`
+                        INNER JOIN utilisateur
+                        ON utilisateur.Id_Utilisateur = articles.Id_Utilisateur
+                        WHERE Id_Articles = :Id_articles AND utilisateur.nom = :leLogin;');
+        
+                        if ($req == false) {
+                            die ('Error preparation');
+                        }
+            
+                        $req2 = $req->execute(array("Id_articles" => $_GET['Id_articles'],
+                            "leLogin" => $_GET['login']));
+            
+                        if ($req2 == false) {
+                            $req->DebugDumpParams();
+                            die ('Error execute');
+                        }
 
-                $postedData = json_decode($postedData, true);
+                        
+                        $matchingData  = $req->fetchAll();
 
-                var_dump($postedData);
+                        //Si il n'y a aucun article avec l'ID spécifié et le login associé
+                        if(count($matchingData) == 0){
+                            /// Envoi de la réponse au Client
+                            deliver_response(401, "L'article ne vous appartient pas ! Impossible d'effectuer l'opération", NULL);
+                        }
+                        else{
+                            /// Récupération des données envoyées par le Client
+                            $postedData = file_get_contents('php://input');
 
-                //echo $postedData['phrase'];
+                            $postedData = json_decode($postedData, true);
 
-                $req = $linkpdo->prepare('SELECT Id_Utilisateur FROM utilisateur WHERE nom=:monLogin');
+                            var_dump($postedData);
 
-                if ($req == false) {
-                    die ('Error preparation');
+                            $matchingData  = idEnLogin($_GET['login']);
+
+                            $req = $linkpdo->prepare('UPDATE articles SET titre = :titre, date_publi = CURRENT_TIMESTAMP, Contenu = :contenu, Id_Utilisateur = :id WHERE Id_articles=:Id_articles');
+
+                            if ($req == false) {
+                                die ('Error preparation');
+                            }
+
+                            $req2 = $req->execute(array("contenu" => $postedData['Contenu'],
+                                                        "Id_articles" => $_GET['Id_articles'],
+                                                        "titre" => $postedData['titre'],
+                                                        "id" => $matchingData[0][0]));
+
+                            if ($req2 == false) {
+                                $req->DebugDumpParams();
+                                die ('Error execute');
+                            }
+                            
+                            /// Traitement
+                            /// Envoi de la réponse au Client
+                            deliver_response(200, "Modification de l'article réussie !", NULL);
+                        }
+                    }
+                    else {
+                        /// Envoi de la réponse au Client
+                        deliver_response(401, "Utilisateur non authentifié, opération refusée", NULL);
+                    }
                 }
-
-                $req2 = $req->execute(array(
-                    "monLogin" => $_GET['login']
-                ));
-
-                if ($req2 == false) {
-                    $req->DebugDumpParams();
-                    die ('Error execute');
-                }
-
-                $matchingData  = $req->fetchAll();
-
-                print_r("L'id recherché : ", $matchingData[0][0]);
-
-                $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
-
-                if ($req == false) {
-                    die ('Error preparation');
-                }
-
-                $req2 = $req->execute(array(
-                    "contenu" => $postedData['Contenu'],
-                    "titre" => $postedData['titre'],
-                    "id" => $matchingData[0][0]
-                ));
-
-                if ($req2 == false) {
-                    $req->DebugDumpParams();
-                    die ('Error execute');
-                }
-
-                /// Envoi de la réponse au Client
-                deliver_response(201, "Insertion réussie !", NULL);
             }
         }
-        
-    break;
-
-    /// Cas de la méthode PUT
-    case "PUT" :
-        /// Récupération des données envoyées par le Client
-        $postedData = file_get_contents('php://input');
-
-        $postedData = json_decode($postedData, true);
-
-        var_dump($postedData);
-
-        $req = $linkpdo->prepare('UPDATE articles SET contenu=:contenu, date_publication = CURRENT_TIMESTAMP, Auteur = :Auteur WHERE Id_articles=:Id_articles');
-
-        if ($req == false) {
-            die ('Error preparation');
+        else{
+            /// Sinon refus
+            deliver_response(401, "Vous n'êtes pas Authentifé. Opération refusée !", NULL);
         }
-
-        $req2 = $req->execute(array("contenu" => $postedData['contenu'],
-                                    "Id_articles" => $_GET['Id_articles'],
-                                    "Auteur" => $postedData['Auteur']));
-
-        if ($req2 == false) {
-            $req->DebugDumpParams();
-            die ('Error execute');
-        }
-        
-        /// Traitement
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
     break;
 
     /// Cas de la méthode DELETE
@@ -190,7 +257,7 @@ catch (Exception $e) {
             }
             else{
                 if (!empty($_GET['Id_articles'])){
-                    /// Traitement
+                    /// Traitement : Si Moderator, l'utilisateur peut supprimer n'importe quel article
                     if($matchingData[0][0] == 'Moderator'){
                         $req = $linkpdo->prepare('DELETE FROM articles WHERE Id_articles=:Id_articles;');
         
@@ -208,6 +275,7 @@ catch (Exception $e) {
                         /// Envoi de la réponse au Client
                         deliver_response(200, "articles supprimé !", NULL);
                     }
+                    /// Traitement : Sinon, l'utilisateur peut supprimer l'article si il lui appartient seulement
                     elseif ($matchingData[0][0] == 'Publisher') {
                         $req = $linkpdo->prepare('SELECT * FROM `articles`
                         INNER JOIN utilisateur
@@ -226,8 +294,10 @@ catch (Exception $e) {
                             die ('Error execute');
                         }
 
+                        
                         $matchingData  = $req->fetchAll();
 
+                        //Si il n'y a aucun article avec l'ID spécifié et le login associé
                         if(count($matchingData) == 0){
                             /// Envoi de la réponse au Client
                             deliver_response(401, "Votre compte n'est pas enregistré en tant que moderator dans notre base. Impossible d'effectuer l'opération", NULL);
@@ -264,84 +334,6 @@ catch (Exception $e) {
             deliver_response(401, "Vous n'êtes pas Authentifé. Opération refusée !", NULL);
         }
     break;
-
-    case "PATCH":
-        /// Récupération des données envoyées par le Client
-        $postedData = file_get_contents('php://input');
-
-        $postedData = json_decode($postedData, true);
-
-        var_dump($postedData);
-
-        if(!empty($_GET['Signaler'])){
-            $req = $linkpdo->prepare('SELECT id FROM chuckn_facts WHERE signalement = 1');
-
-            if ($req == false) {
-                die ('Error preparation');
-            }
-
-            $req2 = $req->execute();
-
-            if ($req2 == false) {
-                $req->DebugDumpParams();
-                die ('Error execute');
-            }
-
-            $matchingData = $req->fetchAll();
-
-            echo $matchingData[0][0];
-            print_r($matchingData);
-
-            if(!array_search($_GET['id'], $matchingData)){
-                $req = $linkpdo->prepare('UPDATE chuckn_facts SET signalement = :sign WHERE id=:id');
-
-                if ($req == false) {
-                    die ('Error preparation');
-                }
-
-                $req2 = $req->execute(array("sign" => $_GET['Signaler'],
-                                            "id" => $_GET['id']));
-
-                if ($req2 == false) {
-                    $req->DebugDumpParams();
-                    die ('Error execute');
-                }
-            }
-            else{
-                $req = $linkpdo->prepare('UPDATE chuckn_facts SET signalement = 0 WHERE id=:id');
-
-                if ($req == false) {
-                    die ('Error preparation');
-                }
-
-                $req2 = $req->execute(array("sign" => $_GET['Signaler'],
-                                            "id" => $_GET['id']));
-
-                if ($req2 == false) {
-                    $req->DebugDumpParams();
-                    die ('Error execute');
-                }
-            }
-        }
-        else{
-            $req = $linkpdo->prepare('UPDATE chuckn_facts SET vote = vote + :vote WHERE id=:id');
-
-            if ($req == false) {
-                die ('Error preparation');
-            }
-    
-            $req2 = $req->execute(array("vote" => $_GET['vote'],
-                                        "id" => $_GET['id']));
-    
-            if ($req2 == false) {
-                $req->DebugDumpParams();
-                die ('Error execute');
-            }
-        }    
-        /// Traitement
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Votre message", NULL);
-        break;
 }
 
 /// Envoi de la réponse au Client
@@ -355,6 +347,33 @@ function deliver_response($status, $status_message, $data){
    /// Mapping de la réponse au format JSON
    $json_response = json_encode($response);
    echo $json_response;
-   }
+}
+
+//Transformation de l'ID de l'utilisateur pour récupérer son login pour son l'insertion dans la base de données
+function idEnLogin($login){
+    try {
+        $linkpdo = new PDO("mysql:host=localhost;dbname=projet_rest", 'root', '');
+    }
+    catch (Exception $e) {
+        die('Error : ' . $e->getMessage());
+    }
+    
+    $req = $linkpdo->prepare('SELECT Id_Utilisateur FROM utilisateur WHERE nom=:monLogin');
+
+    if ($req == false) {
+        die ('Error preparation');
+    }
+
+    $req2 = $req->execute(array(
+        "monLogin" => $login
+    ));
+
+    if ($req2 == false) {
+        $req->DebugDumpParams();
+        die ('Error execute');
+    }
+
+    return $req->fetchAll();
+}
 ?>
-   
+
