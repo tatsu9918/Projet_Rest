@@ -80,8 +80,10 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
             }
             else{
                 $username = $_GET['login'];
+                $password = $_GET['password'];
+                $role=$matchingData[0][0];
                 $headers = array('alg'=>'HS256','typ'=>'JWT');
-                $payload = array('nom'=>$username, 'exp'=>(time() + 60));
+                $payload = array('nom'=>$username,'mdp'=>$password,'role'=>$role, 'exp'=>(time() + 60));
 
                 $jwt = generate_jwt($headers, $payload);
                 echo json_encode(array('token' => $jwt));
