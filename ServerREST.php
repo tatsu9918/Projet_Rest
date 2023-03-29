@@ -15,12 +15,7 @@ $pwd = '';
 //Variable de connection
 $mySqlConnection = "mysql:host=" . $host . ";dbname=" . $dbname;
 
-try {
-    $linkpdo = new PDO($mySqlConnection, $user, $pwd);
-}
-catch (Exception $e) {
-    die('Error : ' . $e->getMessage());
-}
+$linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
  switch ($http_method){
     /// Cas de la méthode GET
@@ -84,7 +79,7 @@ catch (Exception $e) {
                 deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
             }
             else{
-                $username = $matchingData['nom'];
+                $username = $_GET['login'];
                 $headers = array('alg'=>'HS256','typ'=>'JWT');
                 $payload = array('nom'=>$username, 'exp'=>(time() + 60));
 
@@ -99,30 +94,46 @@ catch (Exception $e) {
 
                 var_dump($postedData);
 
-                $matchingData  = idEnLogin($_GET['login']);
+                $matchingData  = loginEnId($_GET['login']);
 
                 //Seulement un test
                 //print_r("L'id recherché : ", $matchingData[0][0]);
 
-                $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
+                if(!empty($postedData)){
+                    $req = $linkpdo->prepare('INSERT INTO articles (titre, date_publi, Contenu, Id_Utilisateur) VALUES (:titre, CURRENT_TIMESTAMP, :contenu, :id)');
 
-                if ($req == false) {
-                    die ('Error preparation');
+                    if ($req == false) {
+                        die ('Error preparation');
+                    }
+    
+                    $req2 = $req->execute(array(
+                        "contenu" => $postedData['Contenu'],
+                        "titre" => $postedData['titre'],
+                        "id" => $matchingData[0][0]
+                    ));
+    
+                    if ($req2 == false) {
+                        $req->DebugDumpParams();
+                        die ('Error execute');
+                    }
+    
+                    /// Envoi de la réponse au Client
+                    deliver_response(201, "Insertion réussie !", $jwt);
                 }
 
-                $req2 = $req->execute(array(
-                    "contenu" => $postedData['Contenu'],
-                    "titre" => $postedData['titre'],
-                    "id" => $matchingData[0][0]
-                ));
-
-                if ($req2 == false) {
-                    $req->DebugDumpParams();
-                    die ('Error execute');
+                if(!empty($_GET['idArticle']) && !empty($_GET['like'])){
+                    if ($_GET['like'] != 0 || $_GET['like'] != 1){
+                        deliver_response(403, "Veuillez entrer 1 pour liker ou 0 pour disliker. Merci", $jwt);
+                    }
+                    else{
+                        if(liker_disliker($_GET['like'], $_GET['idArticle'], loginEnId($_GET['login'])) == 0){
+                            deliver_response(203, "Like/dislike réussi !", $jwt);
+                        }
+                        else{
+                            deliver_response(403, "ERROR", $jwt);
+                        }
+                    }
                 }
-
-                /// Envoi de la réponse au Client
-                deliver_response(201, "Insertion réussie !", NULL);
             }
         }
         
@@ -201,7 +212,7 @@ catch (Exception $e) {
 
                             var_dump($postedData);
 
-                            $matchingData  = idEnLogin($_GET['login']);
+                            $matchingData  = loginEnId($_GET['login']);
 
                             $req = $linkpdo->prepare('UPDATE articles SET titre = :titre, date_publi = CURRENT_TIMESTAMP, Contenu = :contenu, Id_Utilisateur = :id WHERE Id_articles=:Id_articles');
 
@@ -364,13 +375,8 @@ function deliver_response($status, $status_message, $data){
 }
 
 //Transformation de l'ID de l'utilisateur pour récupérer son login pour son l'insertion dans la base de données
-function idEnLogin($login){
-    try {
-        $linkpdo = new PDO($mySqlConnection, $user, $pwd);
-    }
-    catch (Exception $e) {
-        die('Error : ' . $e->getMessage());
-    }
+function loginEnId($login){
+    $linkpdo = connectionBDD("mysql:host=localhost;dbname=projet_rest", 'root', '');
     
     $req = $linkpdo->prepare('SELECT Id_Utilisateur FROM utilisateur WHERE nom=:monLogin');
 
@@ -390,31 +396,40 @@ function idEnLogin($login){
     return $req->fetchAll();
 }
 
-/*function liker_disliker($like, $idArticle, $idUser){
+function liker_disliker($like, $idArticle, $idUser){
+    $linkpdo = connectionBDD("mysql:host=localhost;dbname=projet_rest", 'root', '');
+    
+    $req = $linkpdo->prepare('INSERT INTO like_dislikearticles VALUES ("", :likes, :idUser, :idArt)');
+
+    if ($req == false) {
+        die ('Error preparation');
+        return -1;
+    }
+
+    $req2 = $req->execute(array(
+        "likes" => $like,
+        "idUser" => $idUser,
+        "idArt" => $idArticle
+    ));
+
+    if ($req2 == false) {
+        $req->DebugDumpParams();
+        die ('Error execute');
+        return -1;
+    }
+
+    return 0;
+}
+
+function connectionBDD($mySqlConnection, $user, $pwd){
     try {
         $linkpdo = new PDO($mySqlConnection, $user, $pwd);
     }
     catch (Exception $e) {
         die('Error : ' . $e->getMessage());
     }
-    
-    $req = $linkpdo->prepare('INSERT INTO like_dislikearticles VALUES ("", :likes, :idUser, :id)');
 
-    if ($req == false) {
-        die ('Error preparation');
-    }
-
-    $req2 = $req->execute(array(
-        "monLogin" => $login
-    ));
-
-    if ($req2 == false) {
-        $req->DebugDumpParams();
-        die ('Error execute');
-    }
-
-    return $req->fetchAll();
-    //INSERT INTO like_dislikearticles VALUES ("", 0, 2, 1);
-}*/
+    return $linkpdo;
+}
 ?>
 
