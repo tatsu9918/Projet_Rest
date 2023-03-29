@@ -1,5 +1,6 @@
 <?php
- /// Paramétrage de l'entête HTTP (pour la réponse au Client)
+require_once 'jwt_utils.php';
+/// Paramétrage de l'entête HTTP (pour la réponse au Client)
  header("Content-Type:application/json");
  
  /// Identification du type de méthode HTTP envoyée par le client
@@ -83,6 +84,12 @@ catch (Exception $e) {
                 deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
             }
             else{
+                $username = $matchingData['nom'];
+                $headers = array('alg'=>'HS256','typ'=>'JWT');
+                $payload = array('nom'=>$username, 'exp'=>(time() + 60));
+
+                $jwt = generate_jwt($headers, $payload);
+                echo json_encode(array('token' => $jwt));
                 /// Récupération des données envoyées par le Client
                 $postedData = file_get_contents('php://input');
                 
