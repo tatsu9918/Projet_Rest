@@ -6,9 +6,16 @@
  $http_method = $_SERVER['REQUEST_METHOD'];
 
 
+$host = 'localhost';
+$dbname = 'projet_rest';
+$user = 'root';
+$pwd = '';
+
+//Variable de connection
+$mySqlConnection = "mysql:host=" . $host . ";dbname=" . $dbname;
 
 try {
-    $linkpdo = new PDO("mysql:host=localhost;dbname=projet_rest", 'root', '');
+    $linkpdo = new PDO($mySqlConnection, $user, $pwd);
 }
 catch (Exception $e) {
     die('Error : ' . $e->getMessage());
@@ -352,7 +359,7 @@ function deliver_response($status, $status_message, $data){
 //Transformation de l'ID de l'utilisateur pour récupérer son login pour son l'insertion dans la base de données
 function idEnLogin($login){
     try {
-        $linkpdo = new PDO("mysql:host=localhost;dbname=projet_rest", 'root', '');
+        $linkpdo = new PDO($mySqlConnection, $user, $pwd);
     }
     catch (Exception $e) {
         die('Error : ' . $e->getMessage());
@@ -375,5 +382,32 @@ function idEnLogin($login){
 
     return $req->fetchAll();
 }
+
+/*function liker_disliker($like, $idArticle, $idUser){
+    try {
+        $linkpdo = new PDO($mySqlConnection, $user, $pwd);
+    }
+    catch (Exception $e) {
+        die('Error : ' . $e->getMessage());
+    }
+    
+    $req = $linkpdo->prepare('INSERT INTO like_dislikearticles VALUES ("", :likes, :idUser, :id)');
+
+    if ($req == false) {
+        die ('Error preparation');
+    }
+
+    $req2 = $req->execute(array(
+        "monLogin" => $login
+    ));
+
+    if ($req2 == false) {
+        $req->DebugDumpParams();
+        die ('Error execute');
+    }
+
+    return $req->fetchAll();
+    //INSERT INTO like_dislikearticles VALUES ("", 0, 2, 1);
+}*/
 ?>
 
