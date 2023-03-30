@@ -14,7 +14,11 @@ $pwd = '';
 
 //Variable de connection
 $mySqlConnection = "mysql:host=" . $host . ";dbname=" . $dbname;
+$bearer_token = get_bearer_token();
 
+echo $bearer_token;
+
+$is_jwt_valid = is_jwt_valid($bearer_token);
 $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
  switch ($http_method){
@@ -148,7 +152,7 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
     case "POST" :
         //Vérifie si l'utilisateur à bien rentré ses logins et mot de passes dans l'URL
         if(!empty($_GET['login']) && !empty($_GET['password']))
-    {   if(!empty($_GET['token']))
+    {
         {
             $req = $linkpdo->prepare('SELECT Libellé FROM role
             INNER JOIN utilisateur
@@ -184,14 +188,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 deliver_response(401, "401 Opération refusée : Vous êtes enregistré en tant que Moderator et non Publisher", NULL);
             }
             else{
-                $username = $_GET['login'];
-                $password = $_GET['password'];
-                $role=$matchingData[0][0];
-                $headers = array('alg'=>'HS256','typ'=>'JWT');
-                $payload = array('nom'=>$username,'mdp'=>$password,'role'=>$role, 'exp'=>(time() + 60));
-
-                $jwt = generate_jwt($headers, $payload);
-                echo json_encode(array('token' => $jwt));
                 /// Récupération des données envoyées par le Client
                 $postedData = file_get_contents('php://input');
                 
