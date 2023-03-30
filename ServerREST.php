@@ -44,6 +44,7 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
     case "POST" :
         //Vérifie si l'utilisateur à bien rentré ses logins et mot de passes dans l'URL
         if(!empty($_GET['login']) && !empty($_GET['password']))
+    {   if(!empty($_GET['token']))
         {
             $req = $linkpdo->prepare('SELECT Libellé FROM role
             INNER JOIN utilisateur
@@ -138,7 +139,8 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 }
             }
         }
-        
+    }
+
     break;
 
     /// Cas de la méthode PUT
