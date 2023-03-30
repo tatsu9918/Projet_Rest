@@ -19,25 +19,109 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
  switch ($http_method){
     /// Cas de la méthode GET
-    case "GET" :
-        $req = $linkpdo->prepare('SELECT Id_Articles, titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
+    case "GET":
+        if(!empty($_GET['login']) && !empty($_GET['password']))
+        {
+            $req = $linkpdo->prepare('SELECT Libellé FROM role
+            INNER JOIN utilisateur
+            ON role.Id_Role = utilisateur.Id_Role
+            WHERE utilisateur.nom = :nom AND utilisateur.mdp = :mdp;');
 
-        if ($req == false) {
-             die ('Error preparation');
+            if ($req == false) {
+                die ('Error preparation');
+            }
+
+            $req2 = $req->execute(array(
+                "nom" => $_GET['login'],
+                "mdp" => $_GET['password']
+            ));
+
+            if ($req2 == false) {
+                $req->DebugDumpParams();
+                die ('Error execute');
+            }
+
+            $matchingData  = $req->fetchAll();
+
+            //print_r($matchingData[0][0]);
+
+            //Si l'utilisateur n'est pas enregistré
+            if(count($matchingData) == 0){
+                $req = $linkpdo->prepare('SELECT Id_Articles, titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute();
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                $matchingData  = $req->fetchAll();
+
+                /// Envoi de la réponse au Client
+                deliver_response(200, "Succes. Connecté en tant que non authentifié: Voici les articles", $matchingData);
+                //}
+            }
+            //Si l'utilisateur n'est pas Publisher
+            elseif($matchingData[0][0] == 'Moderator'){
+                $req = $linkpdo->prepare("SELECT a.Id_Articles, a.Contenu, a.date_publi, u.nom AS auteur, 
+                SUM(CASE WHEN lda.type = 1 THEN 1 ELSE 0 END) AS nb_likes, 
+                SUM(CASE WHEN lda.type = 2 THEN 1 ELSE 0 END) AS nb_dislikes,
+                GROUP_CONCAT(DISTINCT CASE WHEN lda.type = 1 THEN u2.nom ELSE NULL END SEPARATOR ', ') AS utilisateurs_likes,
+                GROUP_CONCAT(DISTINCT CASE WHEN lda.type = 2 THEN u2.nom ELSE NULL END SEPARATOR ', ') AS utilisateurs_dislikes
+         FROM Articles a
+         INNER JOIN Utilisateur u ON a.Id_Utilisateur = u.Id_Utilisateur
+         LEFT JOIN Like_DislikeArticles lda ON a.Id_Articles = lda.Id_Articles
+         LEFT JOIN Utilisateur u2 ON lda.Id_Utilisateur = u2.Id_Utilisateur
+         GROUP BY a.Id_Articles");
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute();
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                $matchingData  = $req->fetchAll();
+
+                /// Envoi de la réponse au Client
+                deliver_response(200, "Succes. Connecté en tant que Moderator: Voici les articles", $matchingData);
+            }
+            else{
+                //Les dislikes
+                $req = $linkpdo->prepare("SELECT a.Id_Articles, a.Contenu, a.date_publi, u.nom AS auteur, 
+                SUM(CASE WHEN lda.type = 1 THEN 1 ELSE 0 END) AS nb_likes, 
+                SUM(CASE WHEN lda.type = 2 THEN 1 ELSE 0 END) AS nb_dislikes 
+                FROM Articles a 
+                INNER JOIN Utilisateur u ON a.Id_Utilisateur = u.Id_Utilisateur 
+                LEFT JOIN Like_DislikeArticles lda ON a.Id_Articles = lda.Id_Articles 
+                GROUP BY a.Id_Articles;");
+
+                if ($req == false) {
+                    die ('Error preparation');
+                }
+
+                $req2 = $req->execute();
+
+                if ($req2 == false) {
+                    $req->DebugDumpParams();
+                    die ('Error execute');
+                }
+
+                $matchingData  = $req->fetchAll();
+
+                /// Envoi de la réponse au Client
+                deliver_response(200, "Succes. Connecté en tant que Publisher: Voici les articles", $matchingData);
+            }
         }
-
-        $req2 = $req->execute();
-
-        if ($req2 == false) {
-            $req->DebugDumpParams();
-            die ('Error execute');
-        }
-
-        $matchingData  = $req->fetchAll();
-
-        /// Envoi de la réponse au Client
-        deliver_response(200, "Succes. Voici les articles", $matchingData);
-        //}
     break;
 
     /// Cas de la méthode POST
@@ -123,12 +207,12 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                     deliver_response(201, "Insertion réussie !", $jwt);
                 }
 
-                if(!empty($_GET['idArticle']) && !empty($_GET['like'])){
-                    if ($_GET['like'] != 0 || $_GET['like'] != 1){
-                        deliver_response(403, "Veuillez entrer 1 pour liker ou 0 pour disliker. Merci", $jwt);
+                if(!empty($_GET['idArticle']) && !empty($_GET['likes'])){
+                    if ($_GET['likes'] > 2 | $_GET['likes'] < 1){
+                        deliver_response(403, "Veuillez entrer 1 pour liker ou 2 pour disliker. Merci", $jwt);
                     }
                     else{
-                        if(liker_disliker($_GET['like'], $_GET['idArticle'], loginEnId($_GET['login'])) == 0){
+                        if(liker_disliker($_GET['likes'], $_GET['idArticle'], loginEnId($_GET['login'])[0][0]) == 0){
                             deliver_response(203, "Like/dislike réussi !", $jwt);
                         }
                         else{
