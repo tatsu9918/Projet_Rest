@@ -62,7 +62,7 @@ require_once 'jwt_utils.php';
 
         }
             else{
-                deliver_response(403, "ERROR");
+                deliver_response(403, "Erreur le token n'est pas généré");
             }
                 }
 function deliver_response($status, $status_message, $data){
