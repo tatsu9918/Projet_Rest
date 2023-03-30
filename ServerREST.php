@@ -14,11 +14,6 @@ $pwd = '';
 
 //Variable de connection
 $mySqlConnection = "mysql:host=" . $host . ";dbname=" . $dbname;
-$bearer_token = get_bearer_token();
-
-echo $bearer_token;
-
-$is_jwt_valid = is_jwt_valid($bearer_token);
 $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
  switch ($http_method){
@@ -221,19 +216,19 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                     }
     
                     /// Envoi de la réponse au Client
-                    deliver_response(201, "Insertion réussie !", $jwt);
+                    deliver_response(201, "Insertion réussie !",NULL);
                 }
 
                 if(!empty($_GET['idArticle']) && !empty($_GET['likes'])){
                     if ($_GET['likes'] > 2 | $_GET['likes'] < 1){
-                        deliver_response(403, "Veuillez entrer 1 pour liker ou 2 pour disliker. Merci", $jwt);
+                        deliver_response(403, "Veuillez entrer 1 pour liker ou 2 pour disliker. Merci",NULL);
                     }
                     else{
                         if(liker_disliker($_GET['likes'], $_GET['idArticle'], loginEnId($_GET['login'])[0][0]) == 0){
-                            deliver_response(203, "Like/dislike réussi !", $jwt);
+                            deliver_response(203, "Like/dislike réussi !",NULL);
                         }
                         else{
-                            deliver_response(403, "ERROR", $jwt);
+                            deliver_response(403, "ERROR",NULL);
                         }
                     }
                 }
