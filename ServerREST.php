@@ -122,6 +122,26 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 deliver_response(200, "Succes. Connecté en tant que Publisher: Voici les articles", $matchingData);
             }
         }
+        else{
+            $req = $linkpdo->prepare('SELECT Id_Articles, titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
+
+            if ($req == false) {
+                die ('Error preparation');
+            }
+
+            $req2 = $req->execute();
+
+            if ($req2 == false) {
+                $req->DebugDumpParams();
+                die ('Error execute');
+            }
+
+            $matchingData  = $req->fetchAll();
+
+            /// Envoi de la réponse au Client
+            deliver_response(200, "Succes. Connecté en tant que non authentifié: Voici les articles", $matchingData);
+            //}
+        }
     break;
 
     /// Cas de la méthode POST
