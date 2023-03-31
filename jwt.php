@@ -62,19 +62,19 @@ if ($http_method == "POST") {
             } else {
                 deliver_response(403, "Erreur le token n'est pas généré",NULL);
             }
-
+        }
 if ($http_method == "GET") {
     $JWT = get_bearer_token();
-            $validity = is_jwt_valid($JWT);
-            $data=get_payload_token($JWT);
-            if($validity){
-                deliver_response(201, "Le Token JWT est valide", $validity);
-                deliver_response(201, "Le Token JWT est valide", $data);
-            } else {
-                deliver_response(402, "Le Token JWT est invalide",$validity);
-            }
-        }
+    $validity = is_jwt_valid($JWT);
+    $data=get_payload_token($JWT);
+    if($validity){
+        deliver_response(201, "Le Token JWT est valide", $validity);
+        deliver_response(201, "Le Token JWT est valide", $data);
+    } else {
+        deliver_response(402, "Le Token JWT est invalide",$validity);
+    }
 }
+ 
 function deliver_response($status, $status_message, $data)
 {
     /// Paramétrage de l'entête HTTP, suite
