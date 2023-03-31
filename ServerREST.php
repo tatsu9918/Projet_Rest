@@ -19,11 +19,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
  switch ($http_method){
     /// Cas de la méthode GET
     case "GET":
-        $JWT = get_bearer_token();
-        $validity = is_jwt_valid($JWT);
-        $data=get_payload_token($JWT);
-        if($validity)
-    {
         if(!empty($_GET['login']) && !empty($_GET['password']))
         {
             $req = $linkpdo->prepare('SELECT Libellé FROM role
@@ -126,7 +121,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 deliver_response(200, "Succes. Connecté en tant que Publisher: Voici les articles", $matchingData);
             }
         }
-    }
         else{
             $req = $linkpdo->prepare('SELECT Id_Articles, titre, Contenu, date_publi, utilisateur.nom AS Auteur FROM articles, utilisateur;');
 
@@ -151,10 +145,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
     /// Cas de la méthode POST
     case "POST" :
-        $JWT = get_bearer_token();
-        $validity = is_jwt_valid($JWT);
-        $data=get_payload_token($JWT);
-        if($validity){
         //Vérifie si l'utilisateur à bien rentré ses logins et mot de passes dans l'URL
         if(!empty($_GET['login']) && !empty($_GET['password']))
     {
@@ -245,16 +235,11 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
             }
         }
     }
-}
 
     break;
 
     /// Cas de la méthode PUT
     case "PUT" :
-        $JWT = get_bearer_token();
-        $validity = is_jwt_valid($JWT);
-        $data=get_payload_token($JWT);
-        if($validity){
         if(!empty($_GET['login']) && !empty($_GET['password']))
         {
             $req = $linkpdo->prepare('SELECT Libellé FROM role
@@ -356,7 +341,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 }
             }
         }
-    }
         else{
             /// Sinon refus
             deliver_response(401, "Vous n'êtes pas Authentifé. Opération refusée !", NULL);
@@ -365,10 +349,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
 
     /// Cas de la méthode DELETE
     case "DELETE" :
-        $JWT = get_bearer_token();
-        $validity = is_jwt_valid($JWT);
-        $data=get_payload_token($JWT);
-        if($validity){
         /// Si la récupération du login et du mot de passe n'est pas vide
         if(!empty($_GET['login']) && !empty($_GET['password']))
         {
@@ -473,7 +453,6 @@ $linkpdo = connectionBDD($mySqlConnection, $user, $pwd);
                 }
             }
         }
-    }
         else{
             /// Sinon refus
             deliver_response(401, "Vous n'êtes pas Authentifé. Opération refusée !", NULL);
