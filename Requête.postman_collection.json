@@ -1,0 +1,475 @@
+{
+	"info": {
+		"_postman_id": "ca544408-c28d-437d-a332-ece64a6bd7dc",
+		"name": "Requête",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25739236"
+	},
+	"item": [
+		{
+			"name": "Authentification",
+			"item": [
+				{
+					"name": "Vérification de token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/Projet_Rest/jwt.php",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"Projet_Rest",
+								"jwt.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "nom",
+									"disabled": true
+								},
+								{
+									"key": "password",
+									"value": "test",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Demande de token",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost/Projet_Rest/jwt.php?login=nom&password=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"Projet_Rest",
+								"jwt.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "nom"
+								},
+								{
+									"key": "password",
+									"value": "test"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "API",
+			"item": [
+				{
+					"name": "Get non authentifié",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/Projet_Rest/ServerREST.php",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"Projet_Rest",
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get authentifié Publisher",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple\nJunior&password=mdpJunior\n",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple\nJunior"
+								},
+								{
+									"key": "password",
+									"value": "mdpJunior\n"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get authentifié Moderator",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple&password=mdp\n",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple"
+								},
+								{
+									"key": "password",
+									"value": "mdp\n"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get mal authentifié",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Pasexemple&password=PasMdp",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Pasexemple"
+								},
+								{
+									"key": "password",
+									"value": "PasMdp"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post non identifié",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Pasexemple&password=PasMdp",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Pasexemple"
+								},
+								{
+									"key": "password",
+									"value": "PasMdp"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post moderator",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple&password=mdp",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple"
+								},
+								{
+									"key": "password",
+									"value": "mdp"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post Publisher",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple Junior&password=mdpJunior",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple Junior"
+								},
+								{
+									"key": "password",
+									"value": "mdpJunior"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Put Publisher",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple Junior&password=mdpJunior&Id_articles=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple Junior"
+								},
+								{
+									"key": "password",
+									"value": "mdpJunior"
+								},
+								{
+									"key": "Id_articles",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Put Publisher modifie un article pas à lui",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple&password=mdp",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple"
+								},
+								{
+									"key": "password",
+									"value": "mdp"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Put Moderator",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple&password=mdp&Id_articles=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple"
+								},
+								{
+									"key": "password",
+									"value": "mdp"
+								},
+								{
+									"key": "Id_articles",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Moderator",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple&password=mdp&Id_articles=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple"
+								},
+								{
+									"key": "password",
+									"value": "mdp"
+								},
+								{
+									"key": "Id_articles",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Publisher",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"titre\": \"EXEMPLE\",\r\n    \"Contenu\": \"EXEMPLE\"\r\n}"
+						},
+						"url": {
+							"raw": "http://localhost/ServerREST.php?login=Mr.Exemple Junior&password=mdpJunior&Id_articles=3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"ServerREST.php"
+							],
+							"query": [
+								{
+									"key": "login",
+									"value": "Mr.Exemple Junior"
+								},
+								{
+									"key": "password",
+									"value": "mdpJunior"
+								},
+								{
+									"key": "Id_articles",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
